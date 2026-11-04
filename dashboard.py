@@ -80,6 +80,7 @@ gates = [
     {"gate_id": "Gate-02 (Contact)", "allowed_class": "Narrow-body", "is_contact": True},
     {"gate_id": "Gate-03 (Contact)", "allowed_class": "Narrow-body", "is_contact": True},
     {"gate_id": "Stand-R1 (Remote)", "allowed_class": "Narrow-body", "is_contact": False},
+    {"gate_id": "Stand-R2 (Remote)", "allowed_class": "Narrow-body", "is_contact": False},
 ]
 
 cp = cp_model.CpModel()
@@ -106,26 +107,12 @@ for g in range(n_g):
 penalties = [x[i, g] * (0 if gates[g]["is_contact"] else 50) for i in range(n_f) for g in range(n_g)]
 cp.Minimize(sum(penalties))
 
+# Solver safety parameters for cloud containers
 solver = cp_model.CpSolver()
+solver.parameters.max_time_in_seconds = 2.0
+solver.parameters.num_search_workers = 1
+
 status = solver.Solve(cp)
-
-results = []
-if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-    for i in range(n_f):
-        for g in range(n_g):
-            if solver.Value(x[i, g]) == 1:
-                results.append({
-                    "Flight": live_flights[i]["flight_id"],
-                    "Class": live_flights[i]["aircraft_class"],
-                    "Arrival": live_flights[i]["arrival_time"],
-                    "TAT": live_flights[i]["predicted_tat"],
-                    "Departure": live_flights[i]["arrival_time"] + live_flights[i]["predicted_tat"],
-                    "Gate": gates[g]["gate_id"],
-                    "Type": "Contact Bridge" if gates[g]["is_contact"] else "Remote Stand",
-                    "Delay": live_flights[i]["delay"]
-                })
-
-df_res = pd.DataFrame(results)
 
 # 5. Render Timeline and Metrics
 if not df_res.empty:

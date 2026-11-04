@@ -1,4 +1,5 @@
 # 🛫 AOCC Dynamic Turnaround Time & Gate Conflict Optimization Engine
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://airport-turnaround-gate-optimizer-drtml23gje86ajxwjwtqy.streamlit.app)
 
 An end-to-end tactical decision-support prototype designed for Airport Operations Control Centres (AOCC). The system combines machine learning-driven ground turnaround duration forecasting with discrete combinatorial optimization (Google OR-Tools CP-SAT) to dynamically reassign aircraft stands, resolve gate conflicts, and minimize apron congestion during irregular operations (IROPS).
 
@@ -83,3 +84,21 @@ Where $C_g = 0$ for terminal contact bridges and $C_g = 50$ for remote apron sta
 * **ML / Data Processing:** LightGBM, Pandas, NumPy, Scikit-learn
 * **Combinatorial Optimization:** Google OR-Tools (CP-SAT Solver)
 * **Visualization & Dispatch UI:** Streamlit, Plotly Express
+---
+
+## 📦 Installation & Local Setup
+
+```bash
+# 1. Clone repository
+git clone [https://github.com/USERNAME/airport-turnaround-gate-optimizer.git](https://github.com/USERNAME/airport-turnaround-gate-optimizer.git)
+cd airport-turnaround-gate-optimizer
+
+# 2. Set up virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Launch the AOCC dashboard
+streamlit run dashboard.py

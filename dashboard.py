@@ -36,159 +36,129 @@ if "active_page" not in st.session_state:
     st.session_state.active_page = "Executive Command Deck"
 
 # ==============================================================================
-# SPLASH SCREEN CONTROLLER (ZERO BACKGROUND SVG VERSION)
+# SPLASH SCREEN CONTROLLER (CLEAN TRANSPARENT LOGO)
 # ==============================================================================
 if not st.session_state.splash_complete:
+    logo_file = "logo_transparent.png" if os.path.exists("logo_transparent.png") else ("logo.png" if os.path.exists("logo.png") else "")
     bg_file = "splash_bg.jpg" if os.path.exists("splash_bg.jpg") else ""
+    
+    logo_b64 = get_base64_image(logo_file) if logo_file else ""
     bg_b64 = get_base64_image(bg_file) if bg_file else ""
 
-    bg_css_rule = (
-        f"background: linear-gradient(180deg, rgba(11, 15, 25, 0.45) 0%, rgba(11, 15, 25, 0.88) 100%), "
-        f"url('data:image/jpeg;base64,{bg_b64}') no-repeat center center fixed !important; "
-        f"background-size: cover !important;"
-    ) if bg_b64 else "background: radial-gradient(circle at 50% 35%, #1e293b 0%, #0b0f19 85%) !important;"
-
-    splash_css = f"""
-    <style>
-        header, footer, [data-testid="stSidebar"], [data-testid="stToolbar"] {{
-            display: none !important;
-        }}
-        .stApp {{
-            {bg_css_rule}
-            overflow: hidden;
-        }}
-        .sky-container {{
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 999999;
-            backdrop-filter: blur(2px);
-        }}
-        .radar-sweep {{
-            position: absolute;
-            width: 580px;
-            height: 580px;
-            border-radius: 50%;
-            border: 1px solid rgba(56, 189, 248, 0.15);
-            box-shadow: inset 0 0 50px rgba(56, 189, 248, 0.08);
-            background: conic-gradient(from 0deg, rgba(56, 189, 248, 0.2) 0deg, transparent 70deg, transparent 360deg);
-            animation: radarRotate 4.5s linear infinite;
-            pointer-events: none;
-        }}
-        .radar-ring-inner {{
-            position: absolute;
-            width: 340px;
-            height: 340px;
-            border-radius: 50%;
-            border: 1px dashed rgba(56, 189, 248, 0.25);
-            pointer-events: none;
-        }}
-        .brand-box {{
-            position: relative;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            animation: heroEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }}
-        .brand-svg {{
-            width: 360px;
-            max-width: 85vw;
-            filter: drop-shadow(0 0 25px rgba(56, 189, 248, 0.55));
-            background: transparent !important;
-        }}
-        .brand-tagline {{
-            color: #e2e8f0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-size: 0.85rem;
-            letter-spacing: 0.35em;
-            text-transform: uppercase;
-            margin-top: 14px;
-            font-weight: 500;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-        }}
-        .loader-track {{
-            margin-top: 36px;
-            width: 260px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 999px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }}
-        .loader-bar {{
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, #38bdf8, #818cf8, #38bdf8);
-            box-shadow: 0 0 15px #38bdf8;
-            border-radius: 999px;
-            animation: fillBar 2.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }}
-        @keyframes radarRotate {{
-            from {{ transform: rotate(0deg); }}
-            to {{ transform: rotate(360deg); }}
-        }}
-        @keyframes heroEntrance {{
-            0% {{ opacity: 0; transform: scale(0.92) translateY(18px); }}
-            100% {{ opacity: 1; transform: scale(1) translateY(0); }}
-        }}
-        @keyframes fillBar {{
-            0% {{ transform: translateX(-100%); }}
-            60% {{ transform: translateX(-25%); }}
-            100% {{ transform: translateX(0%); }}
-        }}
-    </style>
-    """
-    st.markdown(splash_css, unsafe_allow_html=True)
-
-    # Pure Vector SVG of AEROT (Naturally 100% Transparent, No Box Possible)
-    aerot_svg = """
-    <svg class="brand-svg" viewBox="0 0 500 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Supersonic Swoosh & Star -->
-        <path d="M190 95 C 220 50, 205 35, 245 42 C 265 45, 305 28, 305 28 L 300 36 C 260 48, 230 65, 205 85 C 195 93, 185 99, 190 95 Z" fill="#F8FAFC" />
-        <polygon points="305,25 311,28 308,34 302,31" fill="#38BDF8" />
-
-        <!-- AEROT Typography -->
-        <g fill="#F8FAFC">
-            <!-- A -->
-            <path d="M 65 145 L 85 105 C 90 95, 100 95, 105 105 L 125 145 C 128 152, 122 158, 114 158 C 108 158, 104 154, 102 149 L 95 132 L 80 132 L 80 149 C 78 155, 71 158, 66 154 C 62 150, 62 147, 65 145 Z M 87 116 L 93 116 L 90 108 Z" />
-            <!-- E -->
-            <path d="M 145 102 C 145 96, 150 92, 156 92 L 195 92 C 201 92, 206 97, 206 103 C 206 109, 201 114, 195 114 L 163 114 L 163 120 L 190 120 C 196 120, 201 125, 201 131 C 201 137, 196 142, 190 142 L 163 142 L 163 148 L 196 148 C 202 148, 207 153, 207 159 C 207 165, 202 170, 196 170 L 156 170 C 150 170, 145 165, 145 159 Z" />
-            <!-- R -->
-            <path d="M 220 95 C 220 92, 225 90, 230 90 L 265 90 C 278 90, 288 98, 288 112 C 288 123, 280 130, 270 133 L 285 155 C 289 160, 286 166, 280 166 C 276 166, 273 164, 271 161 L 254 136 L 236 136 L 236 159 C 236 165, 231 170, 225 170 C 220 170, 220 165, 220 159 Z M 236 106 L 236 122 L 260 122 C 267 122, 272 118, 272 114 C 272 110, 267 106, 260 106 Z" />
-            <!-- O -->
-            <path d="M 335 90 C 358 90, 375 107, 375 130 C 375 153, 358 170, 335 170 C 312 170, 295 153, 295 130 C 295 107, 312 90, 335 90 Z M 335 106 C 321 106, 311 117, 311 130 C 311 143, 321 154, 335 154 C 349 154, 359 143, 359 130 C 359 117, 349 106, 335 106 Z" />
-            <!-- T -->
-            <path d="M 385 102 C 385 96, 390 92, 396 92 L 445 92 C 451 92, 456 97, 456 103 C 456 109, 451 114, 445 114 L 429 114 L 429 159 C 429 165, 424 170, 418 170 C 412 170, 407 165, 407 159 L 407 114 L 396 114 C 390 114, 385 109, 385 102 Z" />
-        </g>
-        <!-- Subtitle -->
-        <text x="250" y="198" text-anchor="middle" fill="#CBD5E1" font-family="-apple-system, sans-serif" font-size="15" font-weight="600" letter-spacing="7">AOCC &amp; COMMERCIAL INTELLIGENCE</text>
-    </svg>
-    """
+    bg_css = f"background: linear-gradient(180deg, rgba(11,15,25,0.45) 0%, rgba(11,15,25,0.9) 100%), url('data:image/jpeg;base64,{bg_b64}') no-repeat center center fixed !important; background-size: cover !important;" if bg_b64 else "background: radial-gradient(circle at 50% 35%, #1e293b 0%, #0b0f19 85%) !important;"
 
     splash_html = f"""
-    <div class="sky-container">
-        <div class="radar-sweep"></div>
-        <div class="radar-ring-inner"></div>
-        <div class="brand-box">
-            {aerot_svg}
-            <div class="brand-tagline">Initializing AOCC & Digital Twin Telemetry...</div>
-            <div class="loader-track">
-                <div class="loader-bar"></div>
-            </div>
+<style>
+header, footer, [data-testid="stSidebar"], [data-testid="stToolbar"] {{
+    display: none !important;
+}}
+.stApp {{
+    {bg_css}
+    overflow: hidden;
+}}
+.sky-container {{
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 999999;
+}}
+.radar-sweep {{
+    position: absolute;
+    width: 560px;
+    height: 560px;
+    border-radius: 50%;
+    border: 1px solid rgba(56, 189, 248, 0.15);
+    box-shadow: inset 0 0 50px rgba(56, 189, 248, 0.08);
+    background: conic-gradient(from 0deg, rgba(56, 189, 248, 0.22) 0deg, transparent 70deg, transparent 360deg);
+    animation: radarRotate 4.5s linear infinite;
+    pointer-events: none;
+}}
+.radar-ring-inner {{
+    position: absolute;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    border: 1px dashed rgba(56, 189, 248, 0.25);
+    pointer-events: none;
+}}
+.brand-box {{
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: heroEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}}
+.brand-logo {{
+    width: 360px;
+    max-width: 85vw;
+    background: transparent !important;
+    filter: drop-shadow(0 0 25px rgba(56, 189, 248, 0.45));
+    margin-bottom: 8px;
+}}
+.brand-tagline {{
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    margin-top: 14px;
+    font-weight: 600;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}}
+.loader-track {{
+    margin-top: 35px;
+    width: 250px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+}}
+.loader-bar {{
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #38bdf8, #818cf8, #38bdf8);
+    box-shadow: 0 0 12px #38bdf8;
+    border-radius: 999px;
+    animation: fillBar 2.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}}
+@keyframes radarRotate {{
+    from {{ transform: rotate(0deg); }}
+    to {{ transform: rotate(360deg); }}
+}}
+@keyframes heroEntrance {{
+    0% {{ opacity: 0; transform: scale(0.92) translateY(18px); }}
+    100% {{ opacity: 1; transform: scale(1) translateY(0); }}
+}}
+@keyframes fillBar {{
+    0% {{ transform: translateX(-100%); }}
+    60% {{ transform: translateX(-25%); }}
+    100% {{ transform: translateX(0%); }}
+}}
+</style>
+
+<div class="sky-container">
+    <div class="radar-sweep"></div>
+    <div class="radar-ring-inner"></div>
+    <div class="brand-box">
+        <img src="data:image/png;base64,{logo_b64}" class="brand-logo" alt="AEROT" />
+        <div class="brand-tagline">Initializing AOCC & Digital Twin Telemetry...</div>
+        <div class="loader-track">
+            <div class="loader-bar"></div>
         </div>
     </div>
-    """
+</div>
+"""
     st.markdown(splash_html, unsafe_allow_html=True)
 
     time.sleep(2.4)
     st.session_state.splash_complete = True
     st.rerun()
-
+    
 # ==============================================================================
 # MAIN AOCC APPLICATION (APPEARS AFTER SPLASH)
 # ==============================================================================

@@ -5,3 +5,4 @@ lightgbm
 ortools
 plotly
 scikit-learn
+Pillow

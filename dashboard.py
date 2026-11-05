@@ -10,6 +10,8 @@ import json
 import base64
 import os
 import time
+import io
+from PIL import Image
 
 # --- Page Configuration ---
 st.set_page_config(

@@ -37,13 +37,6 @@ st.markdown("""
         font-size: 0.9rem;
         margin-bottom: 20px;
     }
-    .status-badge {
-        display: inline-block;
-        padding: 3px 8px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -248,7 +241,6 @@ with tab_3d:
     st.markdown("### Real-Time Airside Digital Twin (Interactive 3D)")
     st.caption("Drag to rotate • Scroll to zoom • Right-click to pan. Aircraft geometry, gate positions, and alert halos react to CP-SAT assignments.")
     
-    # Pack flight + gate coordinates for the WebGL scene
     twin_payload = []
     if not df_res.empty:
         for _, row in df_res.iterrows():
@@ -273,7 +265,6 @@ with tab_3d:
       <style>
         body {{ margin: 0; overflow: hidden; background-color: #0b0f19; font-family: -apple-system, sans-serif; }}
         #canvas-container {{ width: 100vw; height: 500px; }}
-        .badge {{ position: absolute; color: white; background: rgba(0,0,0,0.7); padding: 2px 6px; border-radius: 4px; font-size: 11px; pointer-events: none; }}
       </style>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -298,7 +289,6 @@ with tab_3d:
         controls.dampingFactor = 0.05;
         controls.maxPolarAngle = Math.PI / 2.1;
 
-        // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
         const dirLight = new THREE.DirectionalLight(0x60a5fa, 0.9);
@@ -306,7 +296,6 @@ with tab_3d:
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        // Ground / Tarmac
         const tarmacGeo = new THREE.PlaneGeometry(160, 120);
         const tarmacMat = new THREE.MeshStandardMaterial({{ color: 0x1f2937, roughness: 0.8 }});
         const tarmac = new THREE.Mesh(tarmacGeo, tarmacMat);
@@ -314,7 +303,6 @@ with tab_3d:
         tarmac.receiveShadow = true;
         scene.add(tarmac);
 
-        // Taxiway Centerlines (Yellow)
         const lineMat = new THREE.LineBasicMaterial({{ color: 0xfbbf24, linewidth: 2 }});
         const lineGeo = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(-70, 0.05, 10), new THREE.Vector3(70, 0.05, 10),
@@ -322,7 +310,6 @@ with tab_3d:
         ]);
         scene.add(new THREE.LineSegments(lineGeo, lineMat));
 
-        // Terminal Concourse Building
         const termGeo = new THREE.BoxGeometry(75, 10, 14);
         const termMat = new THREE.MeshStandardMaterial({{ color: 0x374151, roughness: 0.3, metalness: 0.5 }});
         const terminal = new THREE.Mesh(termGeo, termMat);
@@ -330,7 +317,6 @@ with tab_3d:
         terminal.castShadow = true;
         scene.add(terminal);
 
-        // Jetbridges
         [-25, -5, 15].forEach(x => {{
             const jbGeo = new THREE.BoxGeometry(2, 2.5, 9);
             const jbMat = new THREE.MeshStandardMaterial({{ color: 0x4b5563 }});
@@ -339,14 +325,12 @@ with tab_3d:
             scene.add(jb);
         }});
 
-        // Ingest Assignments from Streamlit
         const flightData = {twin_json};
 
         flightData.forEach(f => {{
-            // Status Ring on Ground
-            let ringColor = 0x10b981; // Green
-            if (f.delay > 0 && f.delay <= 15) ringColor = 0xf59e0b; // Amber
-            if (f.delay > 15 || f.is_remote) ringColor = 0xef4444; // Red / Diverted
+            let ringColor = 0x10b981;
+            if (f.delay > 0 && f.delay <= 15) ringColor = 0xf59e0b;
+            if (f.delay > 15 || f.is_remote) ringColor = 0xef4444;
 
             const ringGeo = new THREE.RingGeometry(5, 6.2, 32);
             const ringMat = new THREE.MeshBasicMaterial({{ color: ringColor, side: THREE.DoubleSide }});
@@ -355,7 +339,6 @@ with tab_3d:
             ring.position.set(f.x, 0.08, f.z);
             scene.add(ring);
 
-            // Plane Fuselage Geometry
             const scale = (f.class === "Wide-body") ? 1.5 : 1.0;
             const fuseGeo = new THREE.CylinderGeometry(0.7 * scale, 0.8 * scale, 8 * scale, 12);
             const fuseMat = new THREE.MeshStandardMaterial({{ color: 0xe5e7eb, metalness: 0.2, roughness: 0.4 }});
@@ -363,14 +346,12 @@ with tab_3d:
             fuselage.rotation.x = Math.PI / 2;
             fuselage.position.set(f.x, 1.2 * scale, f.z);
 
-            // Wings
             const wingGeo = new THREE.BoxGeometry(9 * scale, 0.15, 2.2 * scale);
             const wingMat = new THREE.MeshStandardMaterial({{ color: 0x9ca3af }});
             const wings = new THREE.Mesh(wingGeo, wingMat);
             wings.position.set(0, 0, 0.5 * scale);
             fuselage.add(wings);
 
-            // Tail Fin
             const tailGeo = new THREE.BoxGeometry(0.2, 2 * scale, 1.5 * scale);
             const tailMat = new THREE.MeshStandardMaterial({{ color: 0x3b82f6 }});
             const tail = new THREE.Mesh(tailGeo, tailMat);
@@ -393,7 +374,7 @@ with tab_3d:
     components.html(threejs_code, height=520)
 
 # ==========================================
-# TAB 3: INBOUND ROUTE NETWORK
+# TAB 3: INBOUND ROUTE NETWORK (COMPATIBLE MAP)
 # ==========================================
 with tab_map:
     st.markdown("### Macro Flight Trajectories & Inbound Radar")
@@ -401,43 +382,83 @@ with tab_map:
     
     hub_lat, hub_lon = 10.15, 76.40  # Destination Hub
     
+    # Use standard scatter_geo which works across all Plotly versions without mapbox token dependencies
+    route_rows = []
+    for _, r in df_res.iterrows():
+        status_label = "On-Time" if r["Delay"] == 0 else f"+{r['Delay']}m Delayed"
+        route_rows.append({
+            "Flight": r["Flight"],
+            "Origin": r["Origin"],
+            "Origin_Lat": r["Origin_Lat"],
+            "Origin_Lon": r["Origin_Lon"],
+            "Dest_Lat": hub_lat,
+            "Dest_Lon": hub_lon,
+            "Gate": r["Gate"],
+            "Status": status_label,
+            "Color": "#10b981" if r["Delay"] == 0 else "#ef4444"
+        })
+        
+    df_routes = pd.DataFrame(route_rows)
+    
     fig_map = go.Figure()
     
-    # Central Hub
-    fig_map.add_trace(go.Scattermapbox(
-        lat=[hub_lat],
-        lon=[hub_lon],
+    # Plot incoming paths as geodesic arcs
+    for _, row in df_routes.iterrows():
+        fig_map.add_trace(go.Scattergeo(
+            lon=[row["Origin_Lon"], row["Dest_Lon"]],
+            lat=[row["Origin_Lat"], row["Dest_Lat"]],
+            mode="lines",
+            line=dict(width=2.5, color=row["Color"]),
+            opacity=0.8,
+            hoverinfo="none",
+            showlegend=False
+        ))
+        
+    # Plot origin city nodes
+    fig_map.add_trace(go.Scattergeo(
+        lon=df_routes["Origin_Lon"],
+        lat=df_routes["Origin_Lat"],
         mode="markers+text",
-        marker=dict(size=14, color="#3b82f6"),
-        text=["HUB AERO-1"],
-        textposition="bottom right",
+        text=df_routes["Flight"],
+        textposition="top center",
+        marker=dict(size=8, color="#60a5fa", symbol="circle"),
+        hoverinfo="text",
+        hovertext=[f"{r['Flight']} ({r['Origin']})<br>Assigned Stand: {r['Gate']}<br>Status: {r['Status']}" for _, r in df_routes.iterrows()],
+        name="Inbound Flights"
+    ))
+    
+    # Plot Central Airport Hub
+    fig_map.add_trace(go.Scattergeo(
+        lon=[hub_lon],
+        lat=[hub_lat],
+        mode="markers+text",
+        text=["HUB AOCC"],
+        textposition="bottom center",
+        marker=dict(size=14, color="#3b82f6", symbol="star"),
         name="Destination Hub"
     ))
     
-    # Inbound arcs & origins
-    for _, r in df_res.iterrows():
-        line_color = "#10b981" if r["Delay"] == 0 else "#ef4444"
-        fig_map.add_trace(go.Scattermapbox(
-            lat=[r["Origin_Lat"], hub_lat],
-            lon=[r["Origin_Lon"], hub_lon],
-            mode="lines+markers",
-            line=dict(width=2, color=line_color),
-            marker=dict(size=8, color=line_color),
-            hoverinfo="text",
-            text=f"{r['Flight']} ({r['Origin']})<br>Assigned: {r['Gate']}<br>Delay: +{r['Delay']}m",
-            name=r["Flight"]
-        ))
-        
+    fig_map.update_geos(
+        projection_type="natural earth",
+        showland=True,
+        landcolor="#1e293b",
+        oceancolor="#0b0f19",
+        showocean=True,
+        showlakes=True,
+        lakecolor="#0b0f19",
+        showcountries=True,
+        countrycolor="#334155",
+        bgcolor="rgba(0,0,0,0)",
+        fitbounds="locations"
+    )
+    
     fig_map.update_layout(
-        mapbox=dict(
-            style="carto-darkmatter",
-            zoom=3,
-            center=dict(lat=24.0, lon=65.0)
-        ),
+        height=500,
         margin=dict(l=0, r=0, t=10, b=10),
-        height=480,
-        showlegend=False,
-        paper_bgcolor="rgba(0,0,0,0)"
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#f3f4f6"),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
     st.plotly_chart(fig_map, use_container_width=True)
 
@@ -450,7 +471,6 @@ with tab_comm:
     
     clearance_items = []
     for _, r in df_res.iterrows():
-        # Condition: Delayed flight with active ground operations
         if r["TAT"] > 0:
             unsold_seats = int(np.clip(r["TotalSeats"] * 0.03 + (r["Delay"] // 15), 2, 8))
             discount = int(np.clip(25 + (r["Delay"] * 0.5), 20, 60))

@@ -36,17 +36,14 @@ if "active_page" not in st.session_state:
     st.session_state.active_page = "Executive Command Deck"
 
 # ==============================================================================
-# SPLASH SCREEN CONTROLLER
+# SPLASH SCREEN CONTROLLER (ZERO BACKGROUND SVG VERSION)
 # ==============================================================================
 if not st.session_state.splash_complete:
-    logo_file = "logo.png" if os.path.exists("logo.png") else ("logo.jpg" if os.path.exists("logo.jpg") else "")
     bg_file = "splash_bg.jpg" if os.path.exists("splash_bg.jpg") else ""
-    
-    logo_b64 = get_base64_image(logo_file) if logo_file else ""
     bg_b64 = get_base64_image(bg_file) if bg_file else ""
 
     bg_css_rule = (
-        f"background: linear-gradient(180deg, rgba(11, 15, 25, 0.4) 0%, rgba(11, 15, 25, 0.85) 100%), "
+        f"background: linear-gradient(180deg, rgba(11, 15, 25, 0.45) 0%, rgba(11, 15, 25, 0.88) 100%), "
         f"url('data:image/jpeg;base64,{bg_b64}') no-repeat center center fixed !important; "
         f"background-size: cover !important;"
     ) if bg_b64 else "background: radial-gradient(circle at 50% 35%, #1e293b 0%, #0b0f19 85%) !important;"
@@ -97,14 +94,11 @@ if not st.session_state.splash_complete:
             align-items: center;
             animation: heroEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }}
-        /* Transparent Logo: inverts dark font and removes background border/boxes */
-        .brand-logo {{
-            width: 320px;
-            max-width: 82vw;
-            filter: invert(1) brightness(1.3) contrast(1.15) drop-shadow(0 0 25px rgba(56, 189, 248, 0.45));
-            mix-blend-mode: screen;
+        .brand-svg {{
+            width: 360px;
+            max-width: 85vw;
+            filter: drop-shadow(0 0 25px rgba(56, 189, 248, 0.55));
             background: transparent !important;
-            margin-bottom: 8px;
         }}
         .brand-tagline {{
             color: #e2e8f0;
@@ -151,14 +145,37 @@ if not st.session_state.splash_complete:
     """
     st.markdown(splash_css, unsafe_allow_html=True)
 
-    logo_tag = f'<img src="data:image/png;base64,{logo_b64}" class="brand-logo" alt="AEROT" />' if logo_b64 else '<h1 style="color:#f8fafc; font-size:3rem; letter-spacing:0.15em;">AEROT</h1>'
+    # Pure Vector SVG of AEROT (Naturally 100% Transparent, No Box Possible)
+    aerot_svg = """
+    <svg class="brand-svg" viewBox="0 0 500 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Supersonic Swoosh & Star -->
+        <path d="M190 95 C 220 50, 205 35, 245 42 C 265 45, 305 28, 305 28 L 300 36 C 260 48, 230 65, 205 85 C 195 93, 185 99, 190 95 Z" fill="#F8FAFC" />
+        <polygon points="305,25 311,28 308,34 302,31" fill="#38BDF8" />
+
+        <!-- AEROT Typography -->
+        <g fill="#F8FAFC">
+            <!-- A -->
+            <path d="M 65 145 L 85 105 C 90 95, 100 95, 105 105 L 125 145 C 128 152, 122 158, 114 158 C 108 158, 104 154, 102 149 L 95 132 L 80 132 L 80 149 C 78 155, 71 158, 66 154 C 62 150, 62 147, 65 145 Z M 87 116 L 93 116 L 90 108 Z" />
+            <!-- E -->
+            <path d="M 145 102 C 145 96, 150 92, 156 92 L 195 92 C 201 92, 206 97, 206 103 C 206 109, 201 114, 195 114 L 163 114 L 163 120 L 190 120 C 196 120, 201 125, 201 131 C 201 137, 196 142, 190 142 L 163 142 L 163 148 L 196 148 C 202 148, 207 153, 207 159 C 207 165, 202 170, 196 170 L 156 170 C 150 170, 145 165, 145 159 Z" />
+            <!-- R -->
+            <path d="M 220 95 C 220 92, 225 90, 230 90 L 265 90 C 278 90, 288 98, 288 112 C 288 123, 280 130, 270 133 L 285 155 C 289 160, 286 166, 280 166 C 276 166, 273 164, 271 161 L 254 136 L 236 136 L 236 159 C 236 165, 231 170, 225 170 C 220 170, 220 165, 220 159 Z M 236 106 L 236 122 L 260 122 C 267 122, 272 118, 272 114 C 272 110, 267 106, 260 106 Z" />
+            <!-- O -->
+            <path d="M 335 90 C 358 90, 375 107, 375 130 C 375 153, 358 170, 335 170 C 312 170, 295 153, 295 130 C 295 107, 312 90, 335 90 Z M 335 106 C 321 106, 311 117, 311 130 C 311 143, 321 154, 335 154 C 349 154, 359 143, 359 130 C 359 117, 349 106, 335 106 Z" />
+            <!-- T -->
+            <path d="M 385 102 C 385 96, 390 92, 396 92 L 445 92 C 451 92, 456 97, 456 103 C 456 109, 451 114, 445 114 L 429 114 L 429 159 C 429 165, 424 170, 418 170 C 412 170, 407 165, 407 159 L 407 114 L 396 114 C 390 114, 385 109, 385 102 Z" />
+        </g>
+        <!-- Subtitle -->
+        <text x="250" y="198" text-anchor="middle" fill="#CBD5E1" font-family="-apple-system, sans-serif" font-size="15" font-weight="600" letter-spacing="7">AOCC &amp; COMMERCIAL INTELLIGENCE</text>
+    </svg>
+    """
 
     splash_html = f"""
     <div class="sky-container">
         <div class="radar-sweep"></div>
         <div class="radar-ring-inner"></div>
         <div class="brand-box">
-            {logo_tag}
+            {aerot_svg}
             <div class="brand-tagline">Initializing AOCC & Digital Twin Telemetry...</div>
             <div class="loader-track">
                 <div class="loader-bar"></div>

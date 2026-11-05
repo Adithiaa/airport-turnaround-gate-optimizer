@@ -7,40 +7,189 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit.components.v1 as components
 import json
+import base64
+import os
+import time
 
-# --- 1. System Configuration & Dark Aviation HUD Styling ---
+# --- Page Configuration ---
 st.set_page_config(
-    page_title="AeroTwin AOCC | Digital Twin & Gate Engine",
+    page_title="AEROT | AOCC & Commercial Intelligence",
     page_icon="🛫",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
+# --- Base64 Logo Helper ---
+def get_base64_image(image_path):
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    return ""
+
+# --- Session State Initializations ---
+if "splash_complete" not in st.session_state:
+    st.session_state.splash_complete = False
+
+if "active_page" not in st.session_state:
+    st.session_state.active_page = "Executive Command Deck"
+
+# ==============================================================================
+# SPLASH SCREEN CONTROLLER
+# ==============================================================================
+if not st.session_state.splash_complete:
+    logo_file = "logo.png" if os.path.exists("logo.png") else ("logo.jpg" if os.path.exists("logo.jpg") else "")
+    logo_b64 = get_base64_image(logo_file) if logo_file else ""
+
+    splash_css = f"""
+    <style>
+        header, footer, [data-testid="stSidebar"], [data-testid="stToolbar"] {{
+            display: none !important;
+        }}
+        .stApp {{
+            background: radial-gradient(circle at 50% 35%, #1e293b 0%, #0b0f19 85%) !important;
+            overflow: hidden;
+        }}
+        .sky-container {{
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999999;
+        }}
+        .radar-sweep {{
+            position: absolute;
+            width: 560px;
+            height: 560px;
+            border-radius: 50%;
+            border: 1px solid rgba(56, 189, 248, 0.12);
+            box-shadow: inset 0 0 40px rgba(56, 189, 248, 0.05);
+            background: conic-gradient(from 0deg, rgba(56, 189, 248, 0.15) 0deg, transparent 65deg, transparent 360deg);
+            animation: radarRotate 4s linear infinite;
+            pointer-events: none;
+        }}
+        .radar-ring-inner {{
+            position: absolute;
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            border: 1px dashed rgba(56, 189, 248, 0.18);
+            pointer-events: none;
+        }}
+        .brand-box {{
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: heroEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }}
+        .brand-logo {{
+            width: 340px;
+            max-width: 85vw;
+            filter: invert(1) brightness(1.2) drop-shadow(0 0 25px rgba(56, 189, 248, 0.35));
+            margin-bottom: 8px;
+        }}
+        .brand-tagline {{
+            color: #94a3b8;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            margin-top: 10px;
+            opacity: 0.85;
+        }}
+        .loader-track {{
+            margin-top: 40px;
+            width: 280px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }}
+        .loader-bar {{
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #38bdf8, #818cf8, #38bdf8);
+            box-shadow: 0 0 12px #38bdf8;
+            border-radius: 999px;
+            animation: fillBar 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }}
+        @keyframes radarRotate {{
+            from {{ transform: rotate(0deg); }}
+            to {{ transform: rotate(360deg); }}
+        }}
+        @keyframes heroEntrance {{
+            0% {{ opacity: 0; transform: scale(0.92) translateY(18px); }}
+            100% {{ opacity: 1; transform: scale(1) translateY(0); }}
+        }}
+        @keyframes fillBar {{
+            0% {{ transform: translateX(-100%); }}
+            60% {{ transform: translateX(-25%); }}
+            100% {{ transform: translateX(0%); }}
+        }}
+    </style>
+    """
+    st.markdown(splash_css, unsafe_allow_html=True)
+
+    logo_tag = f'<img src="data:image/png;base64,{logo_b64}" class="brand-logo" alt="AEROT" />' if logo_b64 else '<h1 style="color:#f8fafc; font-size:3rem; letter-spacing:0.15em;">AEROT</h1>'
+
+    splash_html = f"""
+    <div class="sky-container">
+        <div class="radar-sweep"></div>
+        <div class="radar-ring-inner"></div>
+        <div class="brand-box">
+            {logo_tag}
+            <div class="brand-tagline">Initializing AOCC & Digital Twin Telemetry...</div>
+            <div class="loader-track">
+                <div class="loader-bar"></div>
+            </div>
+        </div>
+    </div>
+    """
+    st.markdown(splash_html, unsafe_allow_html=True)
+
+    time.sleep(2.4)
+    st.session_state.splash_complete = True
+    st.rerun()
+
+# ==============================================================================
+# MAIN AOCC APPLICATION (APPEARS AFTER SPLASH)
+# ==============================================================================
+
+# Executive Dark Theme Styling
 st.markdown("""
 <style>
-    .main { background-color: #0b0f19; }
-    .stMetric {
-        background: rgba(16, 24, 39, 0.85);
-        border: 1px solid rgba(59, 130, 246, 0.25);
-        border-radius: 8px;
-        padding: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-    }
-    .hud-header {
-        font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
-        color: #f3f4f6;
-        font-weight: 700;
-        letter-spacing: -0.5px;
+    .stApp { background-color: #0b0f19; color: #f3f4f6; }
+    div[data-testid="stSidebar"] { background-color: #0d1322; border-right: 1px solid rgba(59, 130, 246, 0.15); }
+    .hud-title {
+        font-family: 'Inter', -apple-system, sans-serif;
+        color: #f8fafc;
+        font-weight: 800;
+        font-size: 2.1rem;
+        margin-bottom: 2px;
     }
     .hud-sub {
-        color: #9ca3af;
-        font-size: 0.9rem;
-        margin-bottom: 20px;
+        color: #94a3b8;
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
     }
+    .kpi-card {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9));
+        border: 1px solid rgba(59, 130, 246, 0.25);
+        border-radius: 10px;
+        padding: 16px 20px;
+        margin-bottom: 15px;
+    }
+    .kpi-title { font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .kpi-val { font-size: 1.8rem; font-weight: 700; color: #f8fafc; margin: 4px 0; }
+    .kpi-sub { font-size: 0.78rem; color: #38bdf8; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. Machine Learning: Turnaround Prediction Model ---
+# 1. Machine Learning: Turnaround Prediction Model
 @st.cache_resource
 def get_trained_model():
     np.random.seed(42)
@@ -67,76 +216,91 @@ def get_trained_model():
 
 model = get_trained_model()
 
-# --- 3. Global Operational Control Center (Sidebar) ---
-st.sidebar.markdown("### 🎛️ Disruption & Environment")
+# 2. Sidebar Navigation & Global Controls
+st.sidebar.markdown("## 🧭 AEROT Navigation")
+
+nav_options = [
+    "Executive Command Deck",
+    "3D Airside Digital Twin",
+    "Inbound Route Network",
+    "Commercial Seat Clearance",
+    "Gate Optimization Telemetry"
+]
+
+selected_page = st.sidebar.radio(
+    "Go To Module",
+    nav_options,
+    index=nav_options.index(st.session_state.active_page)
+)
+st.session_state.active_page = selected_page
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### ⚡ Live Disruption Controls")
 
 weather_profile = st.sidebar.selectbox(
-    "Weather Scenario (A-CDM Trigger)",
+    "A-CDM Meteorological Profile",
     ["Clear Skies (Nominal)", "Monsoon Downpour (+25% TAT)", "Severe Fog / CAT III (+40% TAT)"]
 )
 
 if "Clear" in weather_profile:
     weather_multiplier = 1.0
     weather_taxi_add = 0
-    weather_color = "#10b981"
+    weather_badge = "🟢 NOMINAL"
 elif "Monsoon" in weather_profile:
     weather_multiplier = 1.25
     weather_taxi_add = 5
-    weather_color = "#f59e0b"
+    weather_badge = "🟡 ADVERSE WEATHER"
 else:
     weather_multiplier = 1.40
     weather_taxi_add = 10
-    weather_color = "#ef4444"
+    weather_badge = "🔴 CAT III GROUND-STOP"
 
 congestion = st.sidebar.slider("Apron Congestion Index", 5, 35, 14)
-buffer_mins = st.sidebar.slider("Safety Separation Buffer (mins)", 10, 30, 15)
+buffer_mins = st.sidebar.slider("Wake & Separation Buffer (mins)", 10, 30, 15)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### ⏱️ Inbound Flight Delays")
+with st.sidebar.expander("⏱️ Inbound Flight Delays", expanded=False):
+    flight_meta = [
+        {"flight_id": "AI-101", "class": "Wide-body", "origin": "London (LHR)", "lat": 51.47, "lon": -0.45, "base_arr": 10, "taxi": 8, "hour": 8, "seats": 296, "fare": 450},
+        {"flight_id": "6E-205", "class": "Narrow-body", "origin": "Delhi (DEL)", "lat": 28.55, "lon": 77.10, "base_arr": 20, "taxi": 6, "hour": 8, "seats": 180, "fare": 95},
+        {"flight_id": "SG-302", "class": "Narrow-body", "origin": "Mumbai (BOM)", "lat": 19.08, "lon": 72.87, "base_arr": 25, "taxi": 10, "hour": 8, "seats": 186, "fare": 80},
+        {"flight_id": "AI-409", "class": "Narrow-body", "origin": "Bengaluru (BLR)", "lat": 13.19, "lon": 77.70, "base_arr": 45, "taxi": 5, "hour": 8, "seats": 160, "fare": 70},
+        {"flight_id": "IX-551", "class": "Regional-Jet", "origin": "Dubai (DXB)", "lat": 25.25, "lon": 55.36, "base_arr": 50, "taxi": 5, "hour": 8, "seats": 78, "fare": 160},
+    ]
 
-flight_meta = [
-    {"flight_id": "AI-101", "class": "Wide-body", "origin": "London (LHR)", "lat": 51.47, "lon": -0.45, "base_arr": 10, "taxi": 8, "hour": 8, "seats": 296, "fare": 450},
-    {"flight_id": "6E-205", "class": "Narrow-body", "origin": "Delhi (DEL)", "lat": 28.55, "lon": 77.10, "base_arr": 20, "taxi": 6, "hour": 8, "seats": 180, "fare": 95},
-    {"flight_id": "SG-302", "class": "Narrow-body", "origin": "Mumbai (BOM)", "lat": 19.08, "lon": 72.87, "base_arr": 25, "taxi": 10, "hour": 8, "seats": 186, "fare": 80},
-    {"flight_id": "AI-409", "class": "Narrow-body", "origin": "Bengaluru (BLR)", "lat": 13.19, "lon": 77.70, "base_arr": 45, "taxi": 5, "hour": 8, "seats": 160, "fare": 70},
-    {"flight_id": "IX-551", "class": "Regional-Jet", "origin": "Dubai (DXB)", "lat": 25.25, "lon": 55.36, "base_arr": 50, "taxi": 5, "hour": 8, "seats": 78, "fare": 160},
-]
+    live_flights = []
+    for f in flight_meta:
+        d = st.number_input(f"{f['flight_id']} ({f['class']}) Delay", min_value=-15, max_value=120, value=0, step=5, key=f"d_{f['flight_id']}")
+        live_flights.append({
+            "flight_id": f["flight_id"],
+            "aircraft_class": f["class"],
+            "origin": f["origin"],
+            "origin_lat": f["lat"],
+            "origin_lon": f["lon"],
+            "arr_delay_mins": d,
+            "taxi_in_mins": f["taxi"] + weather_taxi_add,
+            "hour_of_day": f["hour"],
+            "apron_congestion_index": congestion,
+            "arrival_time": f["base_arr"] + d,
+            "delay": d,
+            "total_seats": f["seats"],
+            "base_fare": f["fare"]
+        })
 
-live_flights = []
-for f in flight_meta:
-    d = st.sidebar.number_input(f"{f['flight_id']} ({f['class']}) Delay", min_value=-15, max_value=120, value=0, step=5)
-    live_flights.append({
-        "flight_id": f["flight_id"],
-        "aircraft_class": f["class"],
-        "origin": f["origin"],
-        "origin_lat": f["lat"],
-        "origin_lon": f["lon"],
-        "arr_delay_mins": d,
-        "taxi_in_mins": f["taxi"] + weather_taxi_add,
-        "hour_of_day": f["hour"],
-        "apron_congestion_index": congestion,
-        "arrival_time": f["base_arr"] + d,
-        "delay": d,
-        "total_seats": f["seats"],
-        "base_fare": f["fare"]
-    })
-
-# --- 4. Turnaround ML Inference & Weather Impact ---
+# 3. Model Inference & OR-Tools Optimization
 df_in = pd.DataFrame(live_flights)
 df_in["aircraft_class"] = df_in["aircraft_class"].astype("category")
 preds = model.predict(df_in[["aircraft_class", "arr_delay_mins", "taxi_in_mins", "hour_of_day", "apron_congestion_index"]])
 
 for i, fl in enumerate(live_flights):
-    raw_tat = preds[i] * weather_multiplier
-    fl["predicted_tat"] = int(np.round(raw_tat))
+    fl["predicted_tat"] = int(np.round(preds[i] * weather_multiplier))
 
-# --- 5. OR-Tools Optimization Engine ---
 gates = [
-    {"gate_id": "Gate-01 (Heavy)", "allowed_class": "Wide-body", "is_contact": True, "x": -25, "z": -10},
-    {"gate_id": "Gate-02 (Contact)", "allowed_class": "Narrow-body", "is_contact": True, "x": -5, "z": -10},
-    {"gate_id": "Gate-03 (Contact)", "allowed_class": "Narrow-body", "is_contact": True, "x": 15, "z": -10},
-    {"gate_id": "Stand-R1 (Remote)", "allowed_class": "Narrow-body", "is_contact": False, "x": -15, "z": 25},
-    {"gate_id": "Stand-R2 (Remote)", "allowed_class": "Narrow-body", "is_contact": False, "x": 10, "z": 25},
+    {"gate_id": "Gate-01 (Heavy)", "allowed_class": "Wide-body", "is_contact": True, "x": -26, "z": -12},
+    {"gate_id": "Gate-02 (Contact)", "allowed_class": "Narrow-body", "is_contact": True, "x": -6, "z": -12},
+    {"gate_id": "Gate-03 (Contact)", "allowed_class": "Narrow-body", "is_contact": True, "x": 14, "z": -12},
+    {"gate_id": "Stand-R1 (Remote)", "allowed_class": "Narrow-body", "is_contact": False, "x": -16, "z": 24},
+    {"gate_id": "Stand-R2 (Remote)", "allowed_class": "Narrow-body", "is_contact": False, "x": 10, "z": 24},
 ]
 
 cp = cp_model.CpModel()
@@ -160,7 +324,7 @@ for g in range(n_g):
             if max(s1, s2) < min(e1, e2):
                 cp.Add(x[i, g] + x[j, g] <= 1)
 
-penalties = [x[i, g] * (0 if gates[g]["is_contact"] else 50) for i in range(n_f) for g in range(n_g)]
+penalties = [x[i, g] * (0 if gates[g]["is_contact"] else 60) for i in range(n_f) for g in range(n_g)]
 cp.Minimize(sum(penalties))
 
 solver = cp_model.CpSolver()
@@ -193,54 +357,54 @@ if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
 
 df_res = pd.DataFrame(results)
 
-# --- 6. Navigation Suite Tabs ---
-st.markdown('<h1 class="hud-header">🛫 AeroTwin AOCC | Digital Twin Platform</h1>', unsafe_allow_html=True)
-st.markdown(f'<p class="hud-sub">Live Operations Control • Meteorological Profile: <span style="color:{weather_color};font-weight:600;">{weather_profile}</span> • Solver: CP-SAT</p>', unsafe_allow_html=True)
+# ==============================================================================
+# SUB-MODULE ROUTING
+# ==============================================================================
+if st.session_state.active_page == "Executive Command Deck":
+    st.markdown('<div class="hud-title">🛫 AEROT Executive Command Deck</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="hud-sub">A-CDM Operational Telemetry • Weather State: <b>{weather_badge}</b></div>', unsafe_allow_html=True)
 
-tab_deck, tab_3d, tab_map, tab_comm, tab_gantt = st.tabs([
-    "📊 Executive HUD",
-    "🏢 3D Apron Twin",
-    "🌐 Inbound Route Network",
-    "🏷️ Revenue Clearance",
-    "📈 Gantt Schedule"
-])
-
-# ==========================================
-# TAB 1: EXECUTIVE HUD
-# ==========================================
-with tab_deck:
     remote_overflows = int((df_res["Type"] == "Remote Stand").sum()) if not df_res.empty else 0
     delayed_flights = int((df_res["Delay"] > 0).sum()) if not df_res.empty else 0
     avg_tat = int(df_res["TAT"].mean()) if not df_res.empty else 0
-    
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Active Movements", len(df_res), "Peak Bank")
-    col2.metric("Mean Predicted TAT", f"{avg_tat} mins", f"{'+' if weather_multiplier > 1.0 else ''}{int((weather_multiplier - 1.0)*100)}% Weather impact")
-    col3.metric("Remote Overflows", remote_overflows, "Bus transfers needed" if remote_overflows > 0 else "All Contact Gates", delta_color="inverse")
-    col4.metric("Network Delayed", delayed_flights, f"{len(df_res) - delayed_flights} On-Time", delta_color="inverse")
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.markdown(f'<div class="kpi-card"><div class="kpi-title">Active Aircraft</div><div class="kpi-val">{len(df_res)} Movements</div><div class="kpi-sub">Peak Inbound Wave</div></div>', unsafe_allow_html=True)
+    c2.markdown(f'<div class="kpi-card"><div class="kpi-title">Mean Predicted TAT</div><div class="kpi-val">{avg_tat} mins</div><div class="kpi-sub">LightGBM Machine Learning</div></div>', unsafe_allow_html=True)
+    c3.markdown(f'<div class="kpi-card"><div class="kpi-title">Remote Stand Demotions</div><div class="kpi-val" style="color:{"#ef4444" if remote_overflows > 0 else "#10b981"};">{remote_overflows} Flights</div><div class="kpi-sub">Bus operations required</div></div>', unsafe_allow_html=True)
+    c4.markdown(f'<div class="kpi-card"><div class="kpi-title">Network OTP</div><div class="kpi-val" style="color:{"#10b981" if delayed_flights == 0 else "#f59e0b"};">{int(((len(df_res) - delayed_flights)/len(df_res))*100) if len(df_res) else 0}%</div><div class="kpi-sub">{delayed_flights} delayed arrival(s)</div></div>', unsafe_allow_html=True)
+
+    st.markdown("### 🎛️ Operational Console Shortcuts")
+    q1, q2, q3, q4 = st.columns(4)
+    if q1.button("🏢 Launch 3D Digital Twin", use_container_width=True):
+        st.session_state.active_page = "3D Airside Digital Twin"
+        st.rerun()
+    if q2.button("🌐 Open Inbound Radar Map", use_container_width=True):
+        st.session_state.active_page = "Inbound Route Network"
+        st.rerun()
+    if q3.button("🏷️ Open Seat Clearance Feed", use_container_width=True):
+        st.session_state.active_page = "Commercial Seat Clearance"
+        st.rerun()
+    if q4.button("📈 Open Solver Diagnostics", use_container_width=True):
+        st.session_state.active_page = "Gate Optimization Telemetry"
+        st.rerun()
 
     st.markdown("---")
-    c_left, c_right = st.columns([2, 1])
-    with c_left:
-        st.markdown("### Operational Stand Allocations")
-        st.dataframe(
-            df_res[["Flight", "Class", "Origin", "Gate", "Type", "Arrival", "TAT", "Departure", "Delay"]],
-            use_container_width=True
-        )
-    with c_right:
-        st.markdown("### Gate Class Capacity Breakdown")
+    left_c, right_c = st.columns([3, 2])
+    with left_c:
+        st.markdown("#### 📋 Live Gate Allocation Manifest")
+        st.dataframe(df_res[["Flight", "Class", "Origin", "Gate", "Type", "Arrival", "TAT", "Departure", "Delay"]], use_container_width=True)
+    with right_c:
+        st.markdown("#### 📊 Stand Utilization Mix")
         if not df_res.empty:
-            pie = px.pie(df_res, names="Type", color="Type", color_discrete_map={"Contact Bridge": "#3b82f6", "Remote Stand": "#ef4444"}, hole=0.5)
-            pie.update_layout(margin=dict(l=0, r=0, t=10, b=10), height=260, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#fff"))
+            pie = px.pie(df_res, names="Type", color="Type", color_discrete_map={"Contact Bridge": "#3b82f6", "Remote Stand": "#ef4444"}, hole=0.55)
+            pie.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=260, paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"))
             st.plotly_chart(pie, use_container_width=True)
 
-# ==========================================
-# TAB 2: 3D APRON DIGITAL TWIN (WebGL / Three.js)
-# ==========================================
-with tab_3d:
-    st.markdown("### Real-Time Airside Digital Twin (Interactive 3D)")
-    st.caption("Drag to rotate • Scroll to zoom • Right-click to pan. Aircraft geometry, gate positions, and alert halos react to CP-SAT assignments.")
-    
+elif st.session_state.active_page == "3D Airside Digital Twin":
+    st.markdown('<div class="hud-title">🏢 3D Airside Terminal Digital Twin</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hud-sub">Interactive spatial twin showing real-time aircraft models, jet bridges, dynamic ground hazard rings, and live TAT countdowns.</div>', unsafe_allow_html=True)
+
     twin_payload = []
     if not df_res.empty:
         for _, row in df_res.iterrows():
@@ -254,111 +418,78 @@ with tab_3d:
                 "delay": row["Delay"],
                 "is_remote": row["Type"] == "Remote Stand"
             })
-    
     twin_json = json.dumps(twin_payload)
-    
+
     threejs_code = f"""
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
-      <style>
-        body {{ margin: 0; overflow: hidden; background-color: #0b0f19; font-family: -apple-system, sans-serif; }}
-        #canvas-container {{ width: 100vw; height: 500px; }}
-      </style>
+      <style>body {{ margin: 0; overflow: hidden; background-color: #0b0f19; font-family: sans-serif; }}</style>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     </head>
     <body>
-      <div id="canvas-container"></div>
+      <div id="canvas-container" style="width: 100vw; height: 580px;"></div>
       <script>
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0e131f);
-        scene.fog = new THREE.FogExp2(0x0e131f, 0.008);
-
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / 500, 1, 1000);
-        camera.position.set(0, 45, 65);
-
+        scene.background = new THREE.Color(0x0b0f19);
+        scene.fog = new THREE.FogExp2(0x0b0f19, 0.007);
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / 580, 1, 1000);
+        camera.position.set(0, 50, 75);
         const renderer = new THREE.WebGLRenderer({{ antialias: true }});
-        renderer.setSize(window.innerWidth, 500);
+        renderer.setSize(window.innerWidth, 580);
         renderer.shadowMap.enabled = true;
         document.getElementById('canvas-container').appendChild(renderer.domElement);
-
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.maxPolarAngle = Math.PI / 2.1;
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
         scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0x60a5fa, 0.9);
-        dirLight.position.set(30, 50, 20);
-        dirLight.castShadow = true;
-        scene.add(dirLight);
+        const sun = new THREE.DirectionalLight(0x60a5fa, 0.9);
+        sun.position.set(30, 60, 20);
+        sun.castShadow = true;
+        scene.add(sun);
 
-        const tarmacGeo = new THREE.PlaneGeometry(160, 120);
-        const tarmacMat = new THREE.MeshStandardMaterial({{ color: 0x1f2937, roughness: 0.8 }});
-        const tarmac = new THREE.Mesh(tarmacGeo, tarmacMat);
+        const tarmac = new THREE.Mesh(new THREE.PlaneGeometry(180, 130), new THREE.MeshStandardMaterial({{ color: 0x1e293b, roughness: 0.85 }}));
         tarmac.rotation.x = -Math.PI / 2;
-        tarmac.receiveShadow = true;
         scene.add(tarmac);
 
-        const lineMat = new THREE.LineBasicMaterial({{ color: 0xfbbf24, linewidth: 2 }});
-        const lineGeo = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(-70, 0.05, 10), new THREE.Vector3(70, 0.05, 10),
-            new THREE.Vector3(-70, 0.05, 38), new THREE.Vector3(70, 0.05, 38)
-        ]);
-        scene.add(new THREE.LineSegments(lineGeo, lineMat));
+        const term = new THREE.Mesh(new THREE.BoxGeometry(85, 12, 16), new THREE.MeshStandardMaterial({{ color: 0x334155, roughness: 0.2 }}));
+        term.position.set(-6, 6, -24);
+        scene.add(term);
 
-        const termGeo = new THREE.BoxGeometry(75, 10, 14);
-        const termMat = new THREE.MeshStandardMaterial({{ color: 0x374151, roughness: 0.3, metalness: 0.5 }});
-        const terminal = new THREE.Mesh(termGeo, termMat);
-        terminal.position.set(-5, 5, -22);
-        terminal.castShadow = true;
-        scene.add(terminal);
-
-        [-25, -5, 15].forEach(x => {{
-            const jbGeo = new THREE.BoxGeometry(2, 2.5, 9);
-            const jbMat = new THREE.MeshStandardMaterial({{ color: 0x4b5563 }});
-            const jb = new THREE.Mesh(jbGeo, jbMat);
-            jb.position.set(x, 2, -12);
+        [-26, -6, 14].forEach(x => {{
+            const jb = new THREE.Mesh(new THREE.BoxGeometry(2.4, 3, 10), new THREE.MeshStandardMaterial({{ color: 0x64748b }}));
+            jb.position.set(x, 2.5, -13);
             scene.add(jb);
         }});
 
-        const flightData = {twin_json};
-
-        flightData.forEach(f => {{
+        const flights = {twin_json};
+        flights.forEach(f => {{
             let ringColor = 0x10b981;
             if (f.delay > 0 && f.delay <= 15) ringColor = 0xf59e0b;
             if (f.delay > 15 || f.is_remote) ringColor = 0xef4444;
 
-            const ringGeo = new THREE.RingGeometry(5, 6.2, 32);
-            const ringMat = new THREE.MeshBasicMaterial({{ color: ringColor, side: THREE.DoubleSide }});
-            const ring = new THREE.Mesh(ringGeo, ringMat);
-            ring.rotation.x = -Math.PI / 2;
-            ring.position.set(f.x, 0.08, f.z);
-            scene.add(ring);
+            const halo = new THREE.Mesh(new THREE.RingGeometry(5.2, 6.6, 36), new THREE.MeshBasicMaterial({{ color: ringColor, side: THREE.DoubleSide }}));
+            halo.rotation.x = -Math.PI / 2;
+            halo.position.set(f.x, 0.08, f.z);
+            scene.add(halo);
 
-            const scale = (f.class === "Wide-body") ? 1.5 : 1.0;
-            const fuseGeo = new THREE.CylinderGeometry(0.7 * scale, 0.8 * scale, 8 * scale, 12);
-            const fuseMat = new THREE.MeshStandardMaterial({{ color: 0xe5e7eb, metalness: 0.2, roughness: 0.4 }});
-            const fuselage = new THREE.Mesh(fuseGeo, fuseMat);
-            fuselage.rotation.x = Math.PI / 2;
-            fuselage.position.set(f.x, 1.2 * scale, f.z);
+            const scale = (f.class === "Wide-body") ? 1.6 : (f.class === "Regional-Jet" ? 0.85 : 1.1);
+            const fuse = new THREE.Mesh(new THREE.CylinderGeometry(0.75 * scale, 0.85 * scale, 8 * scale, 16), new THREE.MeshStandardMaterial({{ color: 0xf1f5f9 }}));
+            fuse.rotation.x = Math.PI / 2;
+            fuse.position.set(f.x, 1.3 * scale, f.z);
 
-            const wingGeo = new THREE.BoxGeometry(9 * scale, 0.15, 2.2 * scale);
-            const wingMat = new THREE.MeshStandardMaterial({{ color: 0x9ca3af }});
-            const wings = new THREE.Mesh(wingGeo, wingMat);
+            const wings = new THREE.Mesh(new THREE.BoxGeometry(9.2 * scale, 0.16, 2.2 * scale), new THREE.MeshStandardMaterial({{ color: 0x94a3b8 }}));
             wings.position.set(0, 0, 0.5 * scale);
-            fuselage.add(wings);
+            fuse.add(wings);
 
-            const tailGeo = new THREE.BoxGeometry(0.2, 2 * scale, 1.5 * scale);
-            const tailMat = new THREE.MeshStandardMaterial({{ color: 0x3b82f6 }});
-            const tail = new THREE.Mesh(tailGeo, tailMat);
-            tail.position.set(0, 1.2 * scale, -3.2 * scale);
-            fuselage.add(tail);
+            const tail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.2 * scale, 1.6 * scale), new THREE.MeshStandardMaterial({{ color: 0x2563eb }}));
+            tail.position.set(0, 1.3 * scale, -3.2 * scale);
+            fuse.add(tail);
 
-            scene.add(fuselage);
+            scene.add(fuse);
         }});
 
         function animate() {{
@@ -371,63 +502,39 @@ with tab_3d:
     </body>
     </html>
     """
-    components.html(threejs_code, height=520)
+    components.html(threejs_code, height=600)
 
-# ==========================================
-# TAB 3: INBOUND ROUTE NETWORK (COMPATIBLE MAP)
-# ==========================================
-with tab_map:
-    st.markdown("### Macro Flight Trajectories & Inbound Radar")
-    st.caption("Visualizing inbound city connections converging on the central hub.")
-    
-    hub_lat, hub_lon = 10.15, 76.40  # Destination Hub
-    
-    # Use standard scatter_geo which works across all Plotly versions without mapbox token dependencies
-    route_rows = []
-    for _, r in df_res.iterrows():
-        status_label = "On-Time" if r["Delay"] == 0 else f"+{r['Delay']}m Delayed"
-        route_rows.append({
-            "Flight": r["Flight"],
-            "Origin": r["Origin"],
-            "Origin_Lat": r["Origin_Lat"],
-            "Origin_Lon": r["Origin_Lon"],
-            "Dest_Lat": hub_lat,
-            "Dest_Lon": hub_lon,
-            "Gate": r["Gate"],
-            "Status": status_label,
-            "Color": "#10b981" if r["Delay"] == 0 else "#ef4444"
-        })
-        
-    df_routes = pd.DataFrame(route_rows)
-    
+elif st.session_state.active_page == "Inbound Route Network":
+    st.markdown('<div class="hud-title">🌐 Macro Air Traffic Radar & Corridors</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hud-sub">Visualizing regional & international flight paths converging on destination hub.</div>', unsafe_allow_html=True)
+
+    hub_lat, hub_lon = 10.15, 76.40
     fig_map = go.Figure()
-    
-    # Plot incoming paths as geodesic arcs
-    for _, row in df_routes.iterrows():
+
+    for _, r in df_res.iterrows():
+        color = "#10b981" if r["Delay"] == 0 else "#ef4444"
         fig_map.add_trace(go.Scattergeo(
-            lon=[row["Origin_Lon"], row["Dest_Lon"]],
-            lat=[row["Origin_Lat"], row["Dest_Lat"]],
+            lon=[r["Origin_Lon"], hub_lon],
+            lat=[r["Origin_Lat"], hub_lat],
             mode="lines",
-            line=dict(width=2.5, color=row["Color"]),
-            opacity=0.8,
+            line=dict(width=2.5, color=color),
+            opacity=0.85,
             hoverinfo="none",
-            showlegend=False
+            name=f"{r['Flight']} Arc"
         ))
-        
-    # Plot origin city nodes
+
     fig_map.add_trace(go.Scattergeo(
-        lon=df_routes["Origin_Lon"],
-        lat=df_routes["Origin_Lat"],
+        lon=df_res["Origin_Lon"],
+        lat=df_res["Origin_Lat"],
         mode="markers+text",
-        text=df_routes["Flight"],
+        text=df_res["Flight"],
         textposition="top center",
-        marker=dict(size=8, color="#60a5fa", symbol="circle"),
+        marker=dict(size=9, color="#38bdf8", symbol="circle"),
         hoverinfo="text",
-        hovertext=[f"{r['Flight']} ({r['Origin']})<br>Assigned Stand: {r['Gate']}<br>Status: {r['Status']}" for _, r in df_routes.iterrows()],
-        name="Inbound Flights"
+        hovertext=[f"Flight: {r['Flight']}<br>Origin: {r['Origin']}<br>Assigned: {r['Gate']}<br>Delay: +{r['Delay']}m" for _, r in df_res.iterrows()],
+        name="Inbound Waypoints"
     ))
-    
-    # Plot Central Airport Hub
+
     fig_map.add_trace(go.Scattergeo(
         lon=[hub_lon],
         lat=[hub_lat],
@@ -437,76 +544,70 @@ with tab_map:
         marker=dict(size=14, color="#3b82f6", symbol="star"),
         name="Destination Hub"
     ))
-    
+
     fig_map.update_geos(
         projection_type="natural earth",
         showland=True,
         landcolor="#1e293b",
         oceancolor="#0b0f19",
         showocean=True,
-        showlakes=True,
-        lakecolor="#0b0f19",
         showcountries=True,
         countrycolor="#334155",
         bgcolor="rgba(0,0,0,0)",
         fitbounds="locations"
     )
-    
-    fig_map.update_layout(
-        height=500,
-        margin=dict(l=0, r=0, t=10, b=10),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#f3f4f6"),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-    )
+    fig_map.update_layout(height=520, margin=dict(l=0, r=0, t=10, b=10), paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"))
     st.plotly_chart(fig_map, use_container_width=True)
 
-# ==========================================
-# TAB 4: COMMERCIAL SEAT CLEARANCE
-# ==========================================
-with tab_comm:
-    st.markdown("### Standby & Dynamic Last-Minute Ancillary Recovery")
-    st.caption("Algorithmic clearance pricing for no-show inventory triggered when turnaround departure is within 45 minutes.")
-    
+elif st.session_state.active_page == "Commercial Seat Clearance":
+    st.markdown('<div class="hud-title">🏷️ Commercial Revenue & Standby Seat Clearance</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hud-sub">Monetizing no-shows created by ground delays. Dynamic algorithmic pricing triggers during turnaround.</div>', unsafe_allow_html=True)
+
     clearance_items = []
     for _, r in df_res.iterrows():
-        if r["TAT"] > 0:
-            unsold_seats = int(np.clip(r["TotalSeats"] * 0.03 + (r["Delay"] // 15), 2, 8))
-            discount = int(np.clip(25 + (r["Delay"] * 0.5), 20, 60))
-            offer_fare = int(r["BaseFare"] * (1 - discount / 100))
-            salvaged = offer_fare * unsold_seats
-            clearance_items.append({
-                "Flight": r["Flight"],
-                "Origin": r["Origin"],
-                "Assigned Stand": r["Gate"],
-                "Unsold / No-Show Seats": unsold_seats,
-                "Original Fare ($)": r["BaseFare"],
-                "Flash Clearance Fare ($)": offer_fare,
-                "Discount": f"{discount}% OFF",
-                "Salvaged Revenue ($)": salvaged
-            })
-            
+        unsold_seats = int(np.clip(r["TotalSeats"] * 0.03 + (r["Delay"] // 15), 2, 8))
+        discount = int(np.clip(20 + (r["Delay"] * 0.6), 20, 65))
+        offer_fare = int(r["BaseFare"] * (1 - discount / 100))
+        salvaged = offer_fare * unsold_seats
+        clearance_items.append({
+            "Flight": r["Flight"],
+            "Origin": r["Origin"],
+            "Assigned Stand": r["Gate"],
+            "Unsold Seats": unsold_seats,
+            "Original Fare ($)": r["BaseFare"],
+            "Flash Price ($)": offer_fare,
+            "Discount": f"{discount}% OFF",
+            "Potential Ancillary ($)": salvaged
+        })
     df_comm = pd.DataFrame(clearance_items)
-    
-    c_m1, c_m2, c_m3 = st.columns(3)
-    c_m1.metric("Clearance Eligible Flights", len(df_comm))
-    c_m2.metric("Total Standby Seats Released", int(df_comm["Unsold / No-Show Seats"].sum()))
-    c_m3.metric("Projected Recovered Revenue", f"${df_comm['Salvaged Revenue ($)'].sum():,}")
-    
-    st.markdown("---")
-    st.dataframe(df_comm, use_container_width=True)
 
-# ==========================================
-# TAB 5: GANTT SCHEDULE & SOLVER TELEMETRY
-# ==========================================
-with tab_gantt:
-    st.markdown("### Gate Assignment Gantt Schedule")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Eligible Departing Flights", len(df_comm))
+    c2.metric("Total Standby Inventory", f"{df_comm['Unsold Seats'].sum()} Seats")
+    c3.metric("Projected Salvaged Revenue", f"${df_comm['Potential Ancillary ($)'].sum():,}")
+
+    st.markdown("---")
+    st.markdown("#### 🎫 Live Standby Deals Feed (Passenger Portal Simulation)")
+    for idx, row in df_comm.iterrows():
+        with st.container():
+            p1, p2, p3, p4, p5 = st.columns([1.5, 2, 1.5, 1.5, 1.5])
+            p1.markdown(f"**{row['Flight']}**  \n`{row['Origin']}`")
+            p2.markdown(f"**Gate:** {row['Assigned Stand']}  \n*{row['Unsold Seats']} seats available*")
+            p3.markdown(f"~~${row['Original Fare ($)']}~~  \n<span style='color:#10b981;font-weight:700;'>${row['Flash Price ($)']}</span>", unsafe_allow_html=True)
+            p4.markdown(f"<span style='background:#047857;padding:3px 8px;border-radius:4px;font-size:0.8rem;font-weight:600;'>{row['Discount']}</span>", unsafe_allow_html=True)
+            if p5.button(f"Claim Seat", key=f"book_{row['Flight']}"):
+                st.success(f"Seat on {row['Flight']} claimed at ${row['Flash Price ($)']}! Ancillary revenue captured.")
+            st.markdown("<hr style='border:0.5px solid rgba(255,255,255,0.05); margin:8px 0;' />", unsafe_allow_html=True)
+
+elif st.session_state.active_page == "Gate Optimization Telemetry":
+    st.markdown('<div class="hud-title">📈 Gate Optimization Diagnostics & Gantt Timeline</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hud-sub">Mathematical schedule intervals from Google OR-Tools CP-SAT solver.</div>', unsafe_allow_html=True)
+
     if not df_res.empty:
         base_t = pd.Timestamp("2026-11-04 08:00:00")
         df_res["Start"] = df_res["Arrival"].apply(lambda t: base_t + pd.Timedelta(minutes=t))
         df_res["End"] = df_res["Departure"].apply(lambda t: base_t + pd.Timedelta(minutes=t))
-        
+
         fig = px.timeline(
             df_res,
             x_start="Start",
@@ -517,7 +618,12 @@ with tab_gantt:
             hover_data=["TAT", "Type", "Delay"]
         )
         fig.update_yaxes(categoryorder="total ascending")
-        fig.update_layout(height=380, margin=dict(l=10, r=10, t=20, b=10), paper_bgcolor="rgba(0,0,0,0)")
+        fig.update_layout(height=420, margin=dict(l=10, r=10, t=20, b=10), paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"))
         st.plotly_chart(fig, use_container_width=True)
+
+        t1, t2, t3 = st.columns(3)
+        t1.metric("Solver Status", "OPTIMAL" if status == cp_model.OPTIMAL else "FEASIBLE")
+        t2.metric("Wall Time", f"{solver.WallTime():.3f}s")
+        t3.metric("Remote Penalty Objective", f"{int(solver.ObjectiveValue())} pts")
     else:
         st.error("No valid gate assignment possible.")

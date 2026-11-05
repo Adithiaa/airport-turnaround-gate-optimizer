@@ -38,7 +38,16 @@ if "active_page" not in st.session_state:
 # ==============================================================================
 if not st.session_state.splash_complete:
     logo_file = "logo.png" if os.path.exists("logo.png") else ("logo.jpg" if os.path.exists("logo.jpg") else "")
+    bg_file = "splash_bg.jpg" if os.path.exists("splash_bg.jpg") else ""
+    
     logo_b64 = get_base64_image(logo_file) if logo_file else ""
+    bg_b64 = get_base64_image(bg_file) if bg_file else ""
+
+    bg_css_rule = (
+        f"background: linear-gradient(180deg, rgba(11, 15, 25, 0.4) 0%, rgba(11, 15, 25, 0.85) 100%), "
+        f"url('data:image/jpeg;base64,{bg_b64}') no-repeat center center fixed !important; "
+        f"background-size: cover !important;"
+    ) if bg_b64 else "background: radial-gradient(circle at 50% 35%, #1e293b 0%, #0b0f19 85%) !important;"
 
     splash_css = f"""
     <style>
@@ -46,7 +55,7 @@ if not st.session_state.splash_complete:
             display: none !important;
         }}
         .stApp {{
-            background: radial-gradient(circle at 50% 35%, #1e293b 0%, #0b0f19 85%) !important;
+            {bg_css_rule}
             overflow: hidden;
         }}
         .sky-container {{
@@ -57,24 +66,25 @@ if not st.session_state.splash_complete:
             justify-content: center;
             align-items: center;
             z-index: 999999;
+            backdrop-filter: blur(2px);
         }}
         .radar-sweep {{
             position: absolute;
-            width: 560px;
-            height: 560px;
+            width: 580px;
+            height: 580px;
             border-radius: 50%;
-            border: 1px solid rgba(56, 189, 248, 0.12);
-            box-shadow: inset 0 0 40px rgba(56, 189, 248, 0.05);
-            background: conic-gradient(from 0deg, rgba(56, 189, 248, 0.15) 0deg, transparent 65deg, transparent 360deg);
-            animation: radarRotate 4s linear infinite;
+            border: 1px solid rgba(56, 189, 248, 0.15);
+            box-shadow: inset 0 0 50px rgba(56, 189, 248, 0.08);
+            background: conic-gradient(from 0deg, rgba(56, 189, 248, 0.2) 0deg, transparent 70deg, transparent 360deg);
+            animation: radarRotate 4.5s linear infinite;
             pointer-events: none;
         }}
         .radar-ring-inner {{
             position: absolute;
-            width: 320px;
-            height: 320px;
+            width: 340px;
+            height: 340px;
             border-radius: 50%;
-            border: 1px dashed rgba(56, 189, 248, 0.18);
+            border: 1px dashed rgba(56, 189, 248, 0.25);
             pointer-events: none;
         }}
         .brand-box {{
@@ -85,37 +95,42 @@ if not st.session_state.splash_complete:
             align-items: center;
             animation: heroEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }}
+        /* Transparent Logo: inverts dark font and removes background border/boxes */
         .brand-logo {{
-            width: 340px;
-            max-width: 85vw;
-            filter: invert(1) brightness(1.2) drop-shadow(0 0 25px rgba(56, 189, 248, 0.35));
+            width: 320px;
+            max-width: 82vw;
+            filter: invert(1) brightness(1.3) contrast(1.15) drop-shadow(0 0 25px rgba(56, 189, 248, 0.45));
+            mix-blend-mode: screen;
+            background: transparent !important;
             margin-bottom: 8px;
         }}
         .brand-tagline {{
-            color: #94a3b8;
+            color: #e2e8f0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 0.85rem;
             letter-spacing: 0.35em;
             text-transform: uppercase;
-            margin-top: 10px;
-            opacity: 0.85;
+            margin-top: 14px;
+            font-weight: 500;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
         }}
         .loader-track {{
-            margin-top: 40px;
-            width: 280px;
+            margin-top: 36px;
+            width: 260px;
             height: 4px;
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.15);
             border-radius: 999px;
             overflow: hidden;
             position: relative;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }}
         .loader-bar {{
             width: 100%;
             height: 100%;
             background: linear-gradient(90deg, #38bdf8, #818cf8, #38bdf8);
-            box-shadow: 0 0 12px #38bdf8;
+            box-shadow: 0 0 15px #38bdf8;
             border-radius: 999px;
-            animation: fillBar 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            animation: fillBar 2.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }}
         @keyframes radarRotate {{
             from {{ transform: rotate(0deg); }}

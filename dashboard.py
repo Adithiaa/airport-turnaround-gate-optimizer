@@ -35,11 +35,17 @@ if "splash_complete" not in st.session_state:
 if "active_page" not in st.session_state:
     st.session_state.active_page = "Executive Command Deck"
 
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+if "user_role" not in st.session_state:
+    st.session_state.user_role = None
+
 # ==============================================================================
 # SPLASH SCREEN CONTROLLER (CLEAN TRANSPARENT LOGO)
 # ==============================================================================
 if not st.session_state.splash_complete:
-    logo_file = "logo_transparent.png" if os.path.exists("logo_transparent.png") else ("logo.png" if os.path.exists("logo.png") else "")
+    logo_file = "logo_clean.png" if os.path.exists("logo_clean.png") else ("logo.png" if os.path.exists("logo.png") else "")
     bg_file = "splash_bg.jpg" if os.path.exists("splash_bg.jpg") else ""
     
     logo_b64 = get_base64_image(logo_file) if logo_file else ""
@@ -158,7 +164,74 @@ header, footer, [data-testid="stSidebar"], [data-testid="stToolbar"] {{
     time.sleep(2.4)
     st.session_state.splash_complete = True
     st.rerun()
-    
+ 
+
+# ==============================================================================
+# ENTERPRISE AUTHENTICATION GATEWAY (PASTE RIGHT HERE)
+# ==============================================================================
+if not st.session_state.get("authenticated", False):
+    st.markdown("""
+    <style>
+        header, footer, [data-testid="stSidebar"], [data-testid="stToolbar"] {
+            display: none !important;
+        }
+        .login-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.75), rgba(15, 23, 42, 0.92));
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            margin-top: 10vh;
+        }
+        .portal-heading {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 4px;
+        }
+        .portal-desc {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 1.3, 1])
+    with col2:
+        st.markdown("""
+        <div class="login-card">
+            <div class="portal-heading">🔒 AEROT Security Gateway</div>
+            <div class="portal-desc">Restricted Terminal Access • Operations Control Personnel Only</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        with st.form("aocc_login_form"):
+            user_input = st.text_input("Operator Callsign / Email", value="dispatcher@aerot.aero")
+            role_choice = st.selectbox(
+                "Console Clearance Tier",
+                ["AOCC Duty Manager (Full Access)", "Ramp Ground Handling Coordinator", "Commercial Revenue Officer"]
+            )
+            pass_input = st.text_input("Access PIN / Security Passkey", type="password", value="aocc2026")
+            submit = st.form_submit_button("Authenticate Console Session", use_container_width=True)
+
+            if submit:
+                if pass_input.strip() == "aocc2026":
+                    st.session_state.authenticated = True
+                    st.session_state.user_role = role_choice
+                    st.session_state.user_callsign = user_input.split("@")[0].upper()
+                    st.success("Access Granted. Initializing Tactical Telemetry...")
+                    time.sleep(0.5)
+                    st.rerun()
+                else:
+                    st.error("Invalid Security Passkey. Demo Passkey: aocc2026")
+
+        st.caption("ℹ️ *Default Evaluator PIN is pre-filled for immediate review.*")
+
+    st.stop()  # Prevents the rest of the app from showing until the user logs in
+
+  
 # ==============================================================================
 # MAIN AOCC APPLICATION (APPEARS AFTER SPLASH)
 # ==============================================================================
@@ -227,7 +300,7 @@ nav_options = [
     "Executive Command Deck",
     "3D Airside Digital Twin",
     "Inbound Route Network",
-    "Commercial Seat Clearance",
+    "Turnaround Milestone & SLA Engine",
     "Gate Optimization Telemetry"
 ]
 
@@ -386,8 +459,8 @@ if st.session_state.active_page == "Executive Command Deck":
     if q2.button("🌐 Open Inbound Radar Map", use_container_width=True):
         st.session_state.active_page = "Inbound Route Network"
         st.rerun()
-    if q3.button("🏷️ Open Seat Clearance Feed", use_container_width=True):
-        st.session_state.active_page = "Commercial Seat Clearance"
+    if q3.button("⏱️ Open SLA Milestone Feed", use_container_width=True):
+        st.session_state.active_page = "Turnaround Milestone & SLA Engine"
         st.rerun()
     if q4.button("📈 Open Solver Diagnostics", use_container_width=True):
         st.session_state.active_page = "Gate Optimization Telemetry"
@@ -563,46 +636,50 @@ elif st.session_state.active_page == "Inbound Route Network":
     fig_map.update_layout(height=520, margin=dict(l=0, r=0, t=10, b=10), paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"))
     st.plotly_chart(fig_map, use_container_width=True)
 
-elif st.session_state.active_page == "Commercial Seat Clearance":
-    st.markdown('<div class="hud-title">🏷️ Commercial Revenue & Standby Seat Clearance</div>', unsafe_allow_html=True)
-    st.markdown('<div class="hud-sub">Monetizing no-shows created by ground delays. Dynamic algorithmic pricing triggers during turnaround.</div>', unsafe_allow_html=True)
-
-    clearance_items = []
-    for _, r in df_res.iterrows():
-        unsold_seats = int(np.clip(r["TotalSeats"] * 0.03 + (r["Delay"] // 15), 2, 8))
-        discount = int(np.clip(20 + (r["Delay"] * 0.6), 20, 65))
-        offer_fare = int(r["BaseFare"] * (1 - discount / 100))
-        salvaged = offer_fare * unsold_seats
-        clearance_items.append({
-            "Flight": r["Flight"],
-            "Origin": r["Origin"],
-            "Assigned Stand": r["Gate"],
-            "Unsold Seats": unsold_seats,
-            "Original Fare ($)": r["BaseFare"],
-            "Flash Price ($)": offer_fare,
-            "Discount": f"{discount}% OFF",
-            "Potential Ancillary ($)": salvaged
-        })
-    df_comm = pd.DataFrame(clearance_items)
+elif st.session_state.active_page == "Turnaround Milestone & SLA Engine":
+    st.markdown('<div class="hud-title">⏱️ Turnaround Milestone & Critical Path Monitor</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hud-sub">A-CDM ground handling telemetry tracking sub-turnaround SLAs to mitigate downstream network delay.</div>', unsafe_allow_html=True)
 
     c1, c2, c3 = st.columns(3)
-    c1.metric("Eligible Departing Flights", len(df_comm))
-    c2.metric("Total Standby Inventory", f"{df_comm['Unsold Seats'].sum()} Seats")
-    c3.metric("Projected Salvaged Revenue", f"${df_comm['Potential Ancillary ($)'].sum():,}")
+    on_schedule = int((df_res["Delay"] == 0).sum()) if not df_res.empty else 0
+    at_risk = int(((df_res["Delay"] > 0) & (df_res["Delay"] <= 15)).sum()) if not df_res.empty else 0
+    critical = int((df_res["Delay"] > 15).sum()) if not df_res.empty else 0
+
+    c1.metric("Nominal Turnarounds", f"{on_schedule} Stands", delta="On Track", delta_color="normal")
+    c2.metric("SLA At-Risk (<15m Delay)", f"{at_risk} Stands", delta="Monitoring", delta_color="off")
+    c3.metric("Critical Path Breaches", f"{critical} Stands", delta="Intervention Req", delta_color="inverse")
 
     st.markdown("---")
-    st.markdown("#### 🎫 Live Standby Deals Feed (Passenger Portal Simulation)")
-    for idx, row in df_comm.iterrows():
-        with st.container():
-            p1, p2, p3, p4, p5 = st.columns([1.5, 2, 1.5, 1.5, 1.5])
-            p1.markdown(f"**{row['Flight']}**  \n`{row['Origin']}`")
-            p2.markdown(f"**Gate:** {row['Assigned Stand']}  \n*{row['Unsold Seats']} seats available*")
-            p3.markdown(f"~~${row['Original Fare ($)']}~~  \n<span style='color:#10b981;font-weight:700;'>${row['Flash Price ($)']}</span>", unsafe_allow_html=True)
-            p4.markdown(f"<span style='background:#047857;padding:3px 8px;border-radius:4px;font-size:0.8rem;font-weight:600;'>{row['Discount']}</span>", unsafe_allow_html=True)
-            if p5.button(f"Claim Seat", key=f"book_{row['Flight']}"):
-                st.success(f"Seat on {row['Flight']} claimed at ${row['Flash Price ($)']}! Ancillary revenue captured.")
-            st.markdown("<hr style='border:0.5px solid rgba(255,255,255,0.05); margin:8px 0;' />", unsafe_allow_html=True)
+    st.markdown("#### 🚜 Live Ground Handling Sub-Milestone Progress")
 
+    for _, row in df_res.iterrows():
+        with st.container():
+            f_col, gate_col, status_col = st.columns([1.5, 2, 4])
+            
+            f_col.markdown(f"**Flight {row['Flight']}**  \n`{row['Class']}` • *{row['Origin']}*")
+            gate_col.markdown(f"**Stand:** `{row['Gate']}`  \n**Target TAT:** `{row['TAT']} mins`")
+            
+            if row['Delay'] == 0:
+                step_status = "🟢 Catering & Baggage Finalizing (80%)"
+                progress_val = 0.8
+            elif row['Delay'] <= 15:
+                step_status = "🟡 Refueling Delayed — Ramp Alert (45%)"
+                progress_val = 0.45
+            else:
+                step_status = "🔴 Deboarding Stalled — Ground Crew Escalation (20%)"
+                progress_val = 0.20
+            
+            with status_col:
+                st.caption(step_status)
+                st.progress(progress_val)
+                b1, b2 = st.columns(2)
+                if b1.button("Request Tug Priority", key=f"tug_{row['Flight']}"):
+                    st.toast(f"Pushback Tug prioritized for Stand {row['Gate']}.", icon="🚜")
+                if b2.button("Log Fueling Complete", key=f"fuel_{row['Flight']}"):
+                    st.toast(f"Fueling SLA closed for {row['Flight']}.", icon="⛽")
+
+            st.markdown("<hr style='border:0.5px solid rgba(255,255,255,0.06); margin:12px 0;' />", unsafe_allow_html=True)
+            
 elif st.session_state.active_page == "Gate Optimization Telemetry":
     st.markdown('<div class="hud-title">📈 Gate Optimization Diagnostics & Gantt Timeline</div>', unsafe_allow_html=True)
     st.markdown('<div class="hud-sub">Mathematical schedule intervals from Google OR-Tools CP-SAT solver.</div>', unsafe_allow_html=True)

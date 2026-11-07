@@ -5,7 +5,7 @@
 [![Google OR-Tools](https://img.shields.io/badge/Google%20OR--Tools-CP--SAT-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://developers.google.com/optimization)
 [![LightGBM](https://img.shields.io/badge/ML%20Inference-LightGBM-2E7D32?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://lightgbm.readthedocs.io/)
 [![Spatial 3D](https://img.shields.io/badge/Spatial%203D-Pydeck%20%7C%20Plotly-3F4F75?style=for-the-badge&logo=plotly&logoColor=white)](https://deck.gl/pydeck/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+
 
 ---
 

@@ -65,11 +65,8 @@ Operating within the framework of **ICAO Airport Collaborative Decision Making (
 * **Real-Time A-CDM Throughput:** Live telemetry KPI cards calculating Active Airspace Movements, Mean Inferred Turnaround (TAT), Remote Stand Demotion counts, and Network On-Time Performance (OTP).
 * **Tactical Approach Holding Waterfall:** Translates vertical rates and airspeeds into operational queues: On-Time Sequenced ($0\text{--}5\text{m}$), Speed Buffered ($5\text{--}20\text{m}$), and Critical Stack Holding ($>20\text{m}$).
 * **Dynamic Stand Utilization:** Live split between Contact Pier Bridges (Direct Terminal Boarding) and Remote Hardstands (Bus Operations).
-
-
-<img width="1467" height="835" alt="Screenshot 2026-11-07 at 5 31 11 PM" src="https://github.com/user-attachments/assets/5c06c761-acb2-4100-870e-ee37c0940022" />
-
-
+  ![Executive Command Deck](aerot/Screenshot%202026-11-07%20at%205.31.11%20PM.png)
+  
 ### 2. 📡 Live Flight Radar & Tactical Movement (BLR Airspace)
 * **Real-Time ADS-B Transponder Streams:** Live polling of aircraft transponders within the VOBL terminal maneuvering area ($11.5^\circ\text{--}14.8^\circ\text{ N}, 75.8^\circ\text{--}79.5^\circ\text{ E}$).
 * **3D Pydeck Airspace Visualization:** 
@@ -77,11 +74,13 @@ Operating within the framework of **ICAO Airport Collaborative Decision Making (
   * 🟡 **Yellow Airframes:** Outbound departures climbing through the terminal sector.
   * 🟢 **Green Airframes:** Active ground ramp, taxiway, and turnaround movements.
 * **Autonomous Telemetry Enrichment:** Decodes callsigns to identify airline operators, aircraft types (e.g., Airbus A350-900, Boeing 777-300ER, A320neo), and connected domestic/international city pairs.
+![Live Radar Movement](aerot/Screenshot%202026-11-07%20at%205.33.01%20PM.png)
 
 ### 3. 🌐 Inbound Route Network & Air Corridors
 * **Great-Circle Feeder Corridors:** Real-time trajectory lines connecting major domestic hubs and Middle Eastern trunks (DEL, BOM, HYD, MAA, CCU, COK, GOI, PNQ, AMD, DXB, DOH, SIN) to Kempegowda Hub.
 * **Kinetic Aircraft Projection:** Projects dynamic aircraft positions along airways using spherical trigonometry and Target Time of Arrival (STA).
 * **Airway Inflow Manifest:** Tabular feed detailing tactical en-route delays, ETA offsets, and pre-allocated apron stands.
+![Inbound Route Network](aerot/Screenshot%202026-11-07%20at%205.34.42%20PM.png)
 
 ### 4. ⏱️ Turnaround Milestone & Ground SLA Engine
 * **A-CDM Critical Path Decomposition:** Proportional duration modeling across 9 sequential and parallel sub-stages:
@@ -95,11 +94,12 @@ Operating within the framework of **ICAO Airport Collaborative Decision Making (
   8. *Passenger Boarding*
   9. *Tug Hookup, Doors & Pushback*
 * **Dynamic Ground Risk Matrix:** Real-time calculation of remaining critical-path buffers, fuel uplift targets (hydrant vs. bowser tanker), catering SLAs, and pushback slot clearance risk.
+  ![Turnaround Milestone SLA Engine](aerot/Screenshot%202026-11-07%20at%205.39.40%20PM.png)
 
 ### 5. 📊 Gate Optimization Telemetry (Google OR-Tools CP-SAT)
 * **Mathematical Stand Allocation:** Uses constraint-programming to solve gate assignments across Terminal 1, Terminal 2, and Western/Eastern remote hardstands.
 * **Apron Occupancy Gantt Chart:** High-resolution interactive visual timeline mapping gate utilization by airframe class and stand type, preventing simultaneous occupation.
-
+![Apron Gantt Optimization](aerot/Screenshot%202026-11-07%20at%205.41.19%20PM.png)
 ---
 
 ## 🧮 Mathematical Formulation (OR-Tools CP-SAT)

@@ -66,6 +66,10 @@ Operating within the framework of **ICAO Airport Collaborative Decision Making (
 * **Tactical Approach Holding Waterfall:** Translates vertical rates and airspeeds into operational queues: On-Time Sequenced ($0\text{--}5\text{m}$), Speed Buffered ($5\text{--}20\text{m}$), and Critical Stack Holding ($>20\text{m}$).
 * **Dynamic Stand Utilization:** Live split between Contact Pier Bridges (Direct Terminal Boarding) and Remote Hardstands (Bus Operations).
 
+
+<img width="1467" height="835" alt="Screenshot 2026-11-07 at 5 31 11 PM" src="https://github.com/user-attachments/assets/5c06c761-acb2-4100-870e-ee37c0940022" />
+
+
 ### 2. 📡 Live Flight Radar & Tactical Movement (BLR Airspace)
 * **Real-Time ADS-B Transponder Streams:** Live polling of aircraft transponders within the VOBL terminal maneuvering area ($11.5^\circ\text{--}14.8^\circ\text{ N}, 75.8^\circ\text{--}79.5^\circ\text{ E}$).
 * **3D Pydeck Airspace Visualization:** 
